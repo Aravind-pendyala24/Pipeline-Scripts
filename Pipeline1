@@ -1,0 +1,55 @@
+pipeline {
+    agent any
+    
+    environment {
+        TOMCAT_SERVER = 'your.tomcat.server' // Replace with your Tomcat server hostname or IP
+        TOMCAT_PORT = '22' // Replace with the SSH port used by your Tomcat server
+        TOMCAT_USERNAME = 'your_ssh_username' // Replace with the SSH username on your Tomcat server
+        TOMCAT_REMOTE_PATH = '/path/to/tomcat/webapps' // Replace with the remote directory where you want to deploy the artifact
+        LOCAL_ARTIFACT_PATH = 'path/to/local/artifact' // Replace with the path of the artifact on the Jenkins server
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checkout your source code repository if needed
+                // For example, for Git:
+                // git branch: 'master', url: 'https://github.com/your/repo.git'
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                // Build your artifact, if needed
+                // For example, for Maven:
+                // sh 'mvn clean package'
+            }
+        }
+        
+        stage('Upload to Tomcat') {
+            steps {
+                script {
+                    // Load the SSH credentials
+                    def sshCredentials = credentials('TOMCAT_SSH_CREDENTIALS')
+                    
+                    // Start the SSH agent with the credentials
+                    sshagent(credentials: [sshCredentials]) {
+                        // Copy the artifact to the Tomcat server using SCP
+                        sh "scp -P ${env.TOMCAT_PORT} ${env.LOCAL_ARTIFACT_PATH} ${env.TOMCAT_USERNAME}@${env.TOMCAT_SERVER}:${env.TOMCAT_REMOTE_PATH}"
+                    }
+                }
+            }
+        }
+        
+        stage('Restart Tomcat') {
+            steps {
+                // Restart Tomcat on the remote server if necessary
+                // For example:
+                // sshagent(credentials: [sshCredentials]) {
+                //     sh "ssh -p ${env.TOMCAT_PORT} ${env.TOMCAT_USERNAME}@${env.TOMCAT_SERVER} '/path/to/tomcat/bin/shutdown.sh; sleep 5; /path/to/tomcat/bin/startup.sh'"
+                // }
+            }
+        }
+    }
+}
+
