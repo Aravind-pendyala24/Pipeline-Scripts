@@ -1,0 +1,22 @@
+pipeline{
+    agent any
+    stages{
+        stage("Clone the code"){
+            steps{
+                git credentialsId: 'Git-Creds', url: 'https://github.com/Aravind-pendyala24/maven-web-app.git'
+            }
+        }
+        stage("Maven build"){
+            steps{
+                sh "mvn clean package"
+            }
+        }
+        stage("tomcat deploy"){
+            steps{
+                sshagent(['Tomcat-Key1']){
+                    sh 'scp -o StrictHostKeyChecking=no target/01-maven-web-app.war ec2-user@52.87.226.239:/opt/tomcat9/webapps'
+                }
+            }
+        }
+    }
+}
